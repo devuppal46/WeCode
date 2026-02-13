@@ -1,7 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Manrope, DM_Sans, Inter } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 const manrope = Manrope({
@@ -38,7 +37,6 @@ export default function RootLayout({
         <body className={`${manrope.variable} ${dmSans.variable} ${inter.variable} font-sans antialiased`}>
         <div className="noise-overlay" aria-hidden="true" />
         {children}
-        <Analytics />
       </body>
     </html>
   )

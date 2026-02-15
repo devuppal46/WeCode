@@ -16,7 +16,7 @@ function CodeEditorMock() {
           <span className="text-xs text-zinc-500 font-mono">main.py</span>
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[10px] text-emerald-400 font-medium">3 online</span>
+            <span className="text-[10px] text-emerald-400 font-medium">system online</span>
           </div>
         </div>
         {/* Code content */}
@@ -59,7 +59,7 @@ function CodeEditorMock() {
               <span className="text-blue-400">in</span>
               <span className="text-zinc-300">{" seen:"}</span>
             </span>
-            <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-medium bg-teal-500 text-white">Alex</span>
+            <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-medium bg-teal-500 text-white">Purvanshu</span>
           </div>
           <div className="flex">
             <span className="text-zinc-600 w-6 text-right mr-3 select-none">6</span>
@@ -74,7 +74,7 @@ function CodeEditorMock() {
               <span className="text-zinc-300">{"seen[num] = i"}</span>
             </span>
             <span className="ml-0.5 w-0.5 h-4 bg-amber-500 inline-block" />
-            <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-600 text-white">You</span>
+            <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-600 text-white">Dev Uppal</span>
           </div>
           <div className="flex">
             <span className="text-zinc-600 w-6 text-right mr-3 select-none">8</span>

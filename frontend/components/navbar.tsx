@@ -22,7 +22,7 @@ export function Navbar() {
         {/* Right side - Star on GitHub + Create Room */}
         <div className="hidden md:flex items-center gap-3">
           <a
-            href="https://github.com"
+            href="https://github.com/devuppal46/WeCode"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-400 hover:text-white border border-zinc-800 rounded-full hover:border-zinc-600 transition-colors"
@@ -50,7 +50,7 @@ export function Navbar() {
         <div className="md:hidden border-t border-zinc-800 bg-zinc-950/95 backdrop-blur-md px-6 py-4">
           <div className="flex flex-col gap-3">
             <a
-              href="https://github.com"
+              href="https://github.com/devuppal46/WeCode"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-3 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800/50 rounded-lg transition-colors"

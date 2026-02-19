@@ -35,47 +35,52 @@ export default function RoomPage() {
 
   // ── Single init effect: read sessionStorage → connect socket → join room ──
   useEffect(() => {
-    if (!roomId) return;
+  if (!roomId) return;
 
-    // 1. Read persisted form data
-    const storedName = sessionStorage.getItem("wecode_userName") ?? "Guest";
-    const storedLang = sessionStorage.getItem("wecode_language") ?? "javascript";
-    const storedAgenda = sessionStorage.getItem("wecode_agenda") ?? "";
+  const storedName = sessionStorage.getItem("wecode_userName") ?? "Guest";
+  const storedLang = sessionStorage.getItem("wecode_language") ?? "javascript";
+  const storedAgenda = sessionStorage.getItem("wecode_agenda") ?? "";
 
-    setUserName(storedName);
-    setLanguage(storedLang);
-    setAgenda(storedAgenda);
-    userNameRef.current = storedName;
+  setUserName(storedName);
+  setLanguage(storedLang);
+  setAgenda(storedAgenda);
+  userNameRef.current = storedName;
 
-    // 2. Connect & join with the freshly-read values
+  // ✅ Prevent double connect
+  if (!socket.connected) {
     socket.connect();
+  }
 
+  // ✅ Emit join AFTER connect event
+  const handleConnect = () => {
     socket.emit("joinRoom", {
       roomId,
       userName: storedName,
       language: storedLang,
     });
+  };
 
-    // 3. Incoming events
-    socket.on("codeUpdate", (newCode: string) => {
-      setCode(newCode);
-    });
+  socket.on("connect", handleConnect);
 
-    socket.on("userListUpdate", (updatedUsers: User[]) => {
-      setUsers(updatedUsers);
-    });
+  socket.on("codeUpdate", (newCode: string) => {
+    setCode(newCode);
+  });
 
-    socket.on("languageUpdate", (newLang: string) => {
-      setLanguage(newLang);
-    });
+  socket.on("userListUpdate", (updatedUsers: User[]) => {
+    setUsers(updatedUsers);
+  });
 
-    return () => {
-      socket.off("codeUpdate");
-      socket.off("userListUpdate");
-      socket.off("languageUpdate");
-      socket.disconnect();
-    };
-  }, [roomId]);
+  socket.on("languageUpdate", (newLang: string) => {
+    setLanguage(newLang);
+  });
+
+  return () => {
+    socket.off("connect", handleConnect);
+    socket.off("codeUpdate");
+    socket.off("userListUpdate");
+    socket.off("languageUpdate");
+  };
+}, [roomId]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCodeChange = useCallback((value: string) => {

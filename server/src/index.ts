@@ -15,11 +15,15 @@ const io = new Server(server, {
   },
 });
 
-// 🧠 Store room state
+interface User {
+  socketId: string;
+  userName: string;
+}
+
 interface Room {
   code: string;
   language: string;
-  users: { socketId: string; userName: string }[];
+  users: User[];
 }
 
 const rooms: Record<string, Room> = {};
@@ -28,11 +32,11 @@ io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
   socket.on("joinRoom", ({ roomId, userName, language }) => {
-    console.log("📥 joinRoom:", roomId, userName, language);
+    if (!roomId) return;
 
     socket.join(roomId);
 
-    // Create room if not exists
+    // Create room if it doesn't exist
     if (!rooms[roomId]) {
       rooms[roomId] = {
         code: "// Start coding...",
@@ -43,14 +47,21 @@ io.on("connection", (socket) => {
 
     const room = rooms[roomId];
 
-    // Add user
-    room.users.push({
-      socketId: socket.id,
-      userName,
-    });
-    console.log("Current users in room:", room.users);
+    // ✅ Prevent duplicate user entries
+    const alreadyExists = room.users.find(
+      (user) => user.socketId === socket.id
+    );
 
-    // Send latest code + language to joining user
+    if (!alreadyExists) {
+      room.users.push({
+        socketId: socket.id,
+        userName,
+      });
+    }
+
+    console.log("👥 Users in room:", room.users);
+
+    // Send current state to joining user
     socket.emit("codeUpdate", room.code);
     socket.emit("languageUpdate", room.language);
 
@@ -59,49 +70,50 @@ io.on("connection", (socket) => {
   });
 
   socket.on("codeChange", ({ roomId, code }) => {
-    if (!rooms[roomId]) return;
-    rooms[roomId].code = code;
+    const room = rooms[roomId];
+    if (!room) return;
+
+    room.code = code;
     socket.to(roomId).emit("codeUpdate", code);
   });
 
-  // 🌐 Language change – sync to all collaborators
   socket.on("languageChange", ({ roomId, language }) => {
-    if (!rooms[roomId]) return;
-    rooms[roomId].language = language;
-    // Broadcast to everyone else (not self – they already updated)
+    const room = rooms[roomId];
+    if (!room) return;
+
+    room.language = language;
     socket.to(roomId).emit("languageUpdate", language);
   });
 
-  // 💬 Chat message – broadcast to whole room
   socket.on("chatMessage", ({ roomId, userName, message }) => {
     if (!roomId || !message?.trim()) return;
+
     const payload = {
       userName,
       message: message.trim(),
       timestamp: new Date().toISOString(),
     };
+
     io.to(roomId).emit("chatMessage", payload);
   });
 
   socket.on("disconnect", () => {
     console.log("🔴 User disconnected:", socket.id);
 
-    // Remove user from all rooms
     for (const roomId in rooms) {
       const room = rooms[roomId];
 
-      const initialLength = room.users.length;
+      const before = room.users.length;
 
       room.users = room.users.filter(
         (user) => user.socketId !== socket.id
       );
 
-      if (room.users.length !== initialLength) {
-        // Broadcast updated list
+      if (room.users.length !== before) {
         io.to(roomId).emit("userListUpdate", room.users);
       }
 
-      // Optional: delete room if empty
+      // Delete room if empty
       if (room.users.length === 0) {
         delete rooms[roomId];
       }

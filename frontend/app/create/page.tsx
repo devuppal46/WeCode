@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { ArrowRight, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,10 +27,21 @@ function generateRoomId() {
 }
 
 export default function CreatePage() {
+  const router = useRouter()
   const [roomId, setRoomId] = useState(generateRoomId())
   const [displayName, setDisplayName] = useState("")
   const [language, setLanguage] = useState("")
   const [agenda, setAgenda] = useState("")
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!displayName.trim() || !language) return
+    // Persist session info so the room page can read it
+    sessionStorage.setItem("wecode_userName", displayName.trim())
+    sessionStorage.setItem("wecode_language", language)
+    sessionStorage.setItem("wecode_agenda", agenda.trim())
+    router.push(`/room/${roomId}`)
+  }
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -50,9 +62,7 @@ export default function CreatePage() {
 
           {/* Form */}
           <form
-            onSubmit={(e) => {
-              e.preventDefault()
-            }}
+            onSubmit={handleSubmit}
             className="flex flex-col gap-5"
           >
             {/* Room ID */}
@@ -130,7 +140,8 @@ export default function CreatePage() {
             {/* Submit */}
             <Button
               type="submit"
-              className="w-full h-11 mt-2 bg-blue-600 text-white hover:bg-blue-500 rounded-lg text-sm font-medium"
+              disabled={!displayName.trim() || !language}
+              className="w-full h-11 mt-2 bg-blue-600 text-white hover:bg-blue-500 rounded-lg text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Start Session
               <ArrowRight className="ml-2 w-4 h-4" />

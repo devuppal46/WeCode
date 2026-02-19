@@ -15,23 +15,100 @@ const io = new Server(server, {
   },
 });
 
+// 🧠 Store room state
+interface Room {
+  code: string;
+  language: string;
+  users: { socketId: string; userName: string }[];
+}
+
+const rooms: Record<string, Room> = {};
+
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("🟢 User connected:", socket.id);
 
-  socket.on("joinRoom", ({ roomId, userName }) => {
-  socket.join(roomId);
-});
+  socket.on("joinRoom", ({ roomId, userName, language }) => {
+    console.log("📥 joinRoom:", roomId, userName, language);
 
+    socket.join(roomId);
 
-socket.on("codeChange", ({ roomId, code }) => {
-  socket.to(roomId).emit("codeUpdate", code);
-});
+    // Create room if not exists
+    if (!rooms[roomId]) {
+      rooms[roomId] = {
+        code: "// Start coding...",
+        language: language || "javascript",
+        users: [],
+      };
+    }
+
+    const room = rooms[roomId];
+
+    // Add user
+    room.users.push({
+      socketId: socket.id,
+      userName,
+    });
+    console.log("Current users in room:", room.users);
+
+    // Send latest code + language to joining user
+    socket.emit("codeUpdate", room.code);
+    socket.emit("languageUpdate", room.language);
+
+    // Broadcast updated user list
+    io.to(roomId).emit("userListUpdate", room.users);
+  });
+
+  socket.on("codeChange", ({ roomId, code }) => {
+    if (!rooms[roomId]) return;
+    rooms[roomId].code = code;
+    socket.to(roomId).emit("codeUpdate", code);
+  });
+
+  // 🌐 Language change – sync to all collaborators
+  socket.on("languageChange", ({ roomId, language }) => {
+    if (!rooms[roomId]) return;
+    rooms[roomId].language = language;
+    // Broadcast to everyone else (not self – they already updated)
+    socket.to(roomId).emit("languageUpdate", language);
+  });
+
+  // 💬 Chat message – broadcast to whole room
+  socket.on("chatMessage", ({ roomId, userName, message }) => {
+    if (!roomId || !message?.trim()) return;
+    const payload = {
+      userName,
+      message: message.trim(),
+      timestamp: new Date().toISOString(),
+    };
+    io.to(roomId).emit("chatMessage", payload);
+  });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("🔴 User disconnected:", socket.id);
+
+    // Remove user from all rooms
+    for (const roomId in rooms) {
+      const room = rooms[roomId];
+
+      const initialLength = room.users.length;
+
+      room.users = room.users.filter(
+        (user) => user.socketId !== socket.id
+      );
+
+      if (room.users.length !== initialLength) {
+        // Broadcast updated list
+        io.to(roomId).emit("userListUpdate", room.users);
+      }
+
+      // Optional: delete room if empty
+      if (room.users.length === 0) {
+        delete rooms[roomId];
+      }
+    }
   });
 });
 
 server.listen(5000, () => {
-  console.log("Server running on port 5000");
+  console.log("🚀 Server running on port 5000");
 });

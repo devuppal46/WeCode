@@ -1,2 +1,14 @@
 # Dependency directories
 **/node_modules/
+
+# Environment configs
+**/.env
+**/.env.*
+
+# Build artifacts
+**/dist/
+**/build/
+**/.next/
+
+# OS specific
+**/.DS_Store

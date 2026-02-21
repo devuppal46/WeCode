@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import LightRays from "@/components/ui/light-rays"
 
 function CodeEditorMock() {
   return (
@@ -94,7 +95,24 @@ export function Hero() {
     <section className="relative min-h-screen flex items-center px-6 lg:px-10 pt-20 pb-16 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 pointer-events-none" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-zinc-800/15 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Dynamic Light Rays replacing static blur */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-50 z-0">
+        <LightRays
+          raysOrigin="top-center"
+          raysColor="#ffffff"
+          raysSpeed={1.5}
+          lightSpread={0.8}
+          rayLength={3}
+          followMouse={true}
+          mouseInfluence={0.15}
+          noiseAmount={0.05}
+          distortion={0}
+          pulsating={false}
+          fadeDistance={1}
+          saturation={1}
+        />
+      </div>
 
       <div className="relative z-10 max-w-[1200px] mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center">
         {/* Left half - Text + Buttons */}

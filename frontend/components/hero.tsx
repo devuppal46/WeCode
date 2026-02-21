@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 function CodeEditorMock() {
@@ -131,9 +131,13 @@ export function Hero() {
             <Button
               variant="outline"
               size="lg"
+              asChild
               className="rounded-full px-7 h-12 text-sm font-medium border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-white hover:border-zinc-700 bg-transparent"
             >
-              Join Room
+              <Link href="/join">
+                <LogIn className="mr-2 w-4 h-4" />
+                Join Room
+              </Link>
             </Button>
           </div>
         </div>

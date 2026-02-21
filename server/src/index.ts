@@ -20,6 +20,8 @@ interface Room {
   code: string;
   language: string;
   users: { socketId: string; userName: string }[];
+  canvasData?: any[]; // Store drawing history to sync late-joiners
+}
 }
 
 const rooms: Record<string, Room> = {};
@@ -38,6 +40,7 @@ io.on("connection", (socket) => {
         code: "// Start coding...",
         language: language || "javascript",
         users: [],
+        canvasData: [],
       };
     }
 
@@ -53,6 +56,7 @@ io.on("connection", (socket) => {
     // Send latest code + language to joining user
     socket.emit("codeUpdate", room.code);
     socket.emit("languageUpdate", room.language);
+    socket.emit("canvasUpdate", room.canvasData);
 
     // Broadcast updated user list
     io.to(roomId).emit("userListUpdate", room.users);
@@ -72,41 +76,46 @@ io.on("connection", (socket) => {
     socket.to(roomId).emit("languageUpdate", language);
   });
 
-  // 💬 Chat message – broadcast to whole room
-  socket.on("chatMessage", ({ roomId, userName, message }) => {
-    if (!roomId || !message?.trim()) return;
-    const payload = {
-      userName,
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    io.to(roomId).emit("chatMessage", payload);
-  });
+  io.to(roomId).emit("chatMessage", payload);
+});
 
-  socket.on("disconnect", () => {
-    console.log("🔴 User disconnected:", socket.id);
+// 🎨 Whiteboard – Sync drawing paths
+socket.on("draw", ({ roomId, data }) => {
+  if (!rooms[roomId]) return;
+  rooms[roomId].canvasData.push(data);
+  socket.to(roomId).emit("draw", data);
+});
 
-    // Remove user from all rooms
-    for (const roomId in rooms) {
-      const room = rooms[roomId];
+socket.on("clearCanvas", (roomId) => {
+  if (!rooms[roomId]) return;
+  rooms[roomId].canvasData = [];
+  io.to(roomId).emit("clearCanvas");
+});
 
-      const initialLength = room.users.length;
+socket.on("disconnect", () => {
+  console.log("🔴 User disconnected:", socket.id);
 
-      room.users = room.users.filter(
-        (user) => user.socketId !== socket.id
-      );
+  // Remove user from all rooms
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
 
-      if (room.users.length !== initialLength) {
-        // Broadcast updated list
-        io.to(roomId).emit("userListUpdate", room.users);
-      }
+    const initialLength = room.users.length;
 
-      // Optional: delete room if empty
-      if (room.users.length === 0) {
-        delete rooms[roomId];
-      }
+    room.users = room.users.filter(
+      (user) => user.socketId !== socket.id
+    );
+
+    if (room.users.length !== initialLength) {
+      // Broadcast updated list
+      io.to(roomId).emit("userListUpdate", room.users);
     }
-  });
+
+    // Optional: delete room if empty
+    if (room.users.length === 0) {
+      delete rooms[roomId];
+    }
+  }
+});
 });
 
 server.listen(5000, () => {

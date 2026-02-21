@@ -13,6 +13,7 @@ interface ChatMessage {
 interface ChatPanelProps {
   roomId: string
   userName: string
+  messages: ChatMessage[]
 }
 
 // Simple consistent color per username
@@ -37,20 +38,10 @@ function formatTime(iso: string) {
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
 }
 
-export default function ChatPanel({ roomId, userName }: ChatPanelProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+export default function ChatPanel({ roomId, userName, messages }: ChatPanelProps) {
   const [input, setInput] = useState("")
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-
-  // ── Socket listener ─────────────────────────────────────────────────────
-  useEffect(() => {
-    const handler = (msg: ChatMessage) => {
-      setMessages((prev) => [...prev, msg])
-    }
-    socket.on("chatMessage", handler)
-    return () => { socket.off("chatMessage", handler) }
-  }, [])
 
   // ── Auto-scroll on new message ──────────────────────────────────────────
   useEffect(() => {
@@ -120,8 +111,8 @@ export default function ChatPanel({ roomId, userName }: ChatPanelProps) {
                 )}
                 <div
                   className={`relative max-w-[170px] px-3 py-2 rounded-2xl text-xs leading-relaxed break-words ${isMe
-                      ? "bg-blue-600 text-white rounded-br-sm"
-                      : "bg-zinc-800 text-zinc-200 rounded-bl-sm"
+                    ? "bg-blue-600 text-white rounded-br-sm"
+                    : "bg-zinc-800 text-zinc-200 rounded-bl-sm"
                     }`}
                 >
                   {msg.message}

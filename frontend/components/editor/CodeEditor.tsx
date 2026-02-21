@@ -15,7 +15,6 @@ import {
 
 // ─── Language config ───────────────────────────────────────────────
 export const LANGUAGES = [
-  { value: "javascript", label: "JavaScript", ext: "js" },
   { value: "python", label: "Python", ext: "py" },
   { value: "java", label: "Java", ext: "java" },
   { value: "cpp", label: "C++", ext: "cpp" },
@@ -143,30 +142,53 @@ export default function CodeEditor({
     setOutput((prev) => [
       ...prev,
       `[${new Date().toLocaleTimeString()}] Running build pipeline...`,
-      `[Status] Compiling source files...`,
+      `[Status] Sending code to server for execution...`,
     ])
 
-    // Simulate execution steps
-    setTimeout(() => {
-      setOutput((prev) => [...prev, `[Success] Compilation finished.`])
+    try {
+      const response = await fetch("http://localhost:5000/api/execute", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language: language,
+          code: codeToRun,
+        }),
+      })
 
-      setTimeout(() => {
-        setIsRunning(false)
-        setOutput((prev) => [
-          ...prev,
-          `-------------------------------------------`,
-          `Standard Output:`,
-          `> Hello world from WeCode!`,
-          `> User: ${userName}`,
-          `> Environment: stable-x64`,
-          `-------------------------------------------`,
-          `Performance Metrics:`,
-          `- Memory: 42.4 MB`,
-          `- CPU: 0.12s`,
-          `Result: Execution finished successfully.`,
-        ])
-      }, 1000)
-    }, 800)
+      const data = await response.json()
+
+      setIsRunning(false)
+
+      const rawOutput: string = data.output || ""
+      const outLines = rawOutput.trim().split('\n')
+      const hasOutput = rawOutput.trim() !== ""
+
+      setOutput((prev) => [
+        ...prev,
+        ...(!data.error ? [`[Success] Execution finished.`] : [`[Error] Execution finished with errors.`]),
+        `-------------------------------------------`,
+        `Standard Output:`,
+        ...(hasOutput
+          ? outLines.map((line: string) => `> ${line}`)
+          : [`> (No output)`]),
+        `-------------------------------------------`,
+        ...(data.error ? [
+          `Error Output:`,
+          ...(typeof data.error === 'string' ? data.error.trim().split('\n').map((line: string) => `> ${line}`) : [`> ${String(data.error)}`]),
+          `-------------------------------------------`
+        ] : []),
+        data.error ? `Result: Execution finished with errors.` : `Result: Execution finished successfully.`,
+      ])
+    } catch (err: any) {
+      setIsRunning(false)
+      setOutput((prev) => [
+        ...prev,
+        `[Error] Failed to execute code: ${err.message}`,
+        `Result: Execution failed.`,
+      ])
+    }
   }
 
   const clearConsole = () => setOutput(["Console cleared."])

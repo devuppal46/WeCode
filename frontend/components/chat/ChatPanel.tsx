@@ -48,7 +48,7 @@ export default function ChatPanel({ roomId, userName, messages }: ChatPanelProps
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // ── Send ────────────────────────────────────────────────────────────────
+  // ── Send ─
   const sendMessage = () => {
     const msg = input.trim()
     if (!msg || !roomId) return

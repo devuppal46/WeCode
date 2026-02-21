@@ -30,7 +30,7 @@ export default function RoomPage() {
 
   // State — userName is state (not just ref) so the header re-renders with it
   const [userName, setUserName] = useState("Guest");
-  const [language, setLanguage] = useState("javascript");
+  const [language, setLanguage] = useState("python");
   const [code, setCode] = useState("// Start coding...");
   const [users, setUsers] = useState<User[]>([]);
   const [agenda, setAgenda] = useState("");
@@ -49,7 +49,7 @@ export default function RoomPage() {
 
     // 1. Read persisted form data
     const storedName = sessionStorage.getItem("wecode_userName") ?? "Guest";
-    const storedLang = sessionStorage.getItem("wecode_language") ?? "javascript";
+    const storedLang = sessionStorage.getItem("wecode_language") ?? "python";
     const storedAgenda = sessionStorage.getItem("wecode_agenda") ?? "";
 
     setUserName(storedName);
@@ -161,8 +161,8 @@ export default function RoomPage() {
           <button
             onClick={() => setMainTab("code")}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all ${mainTab === "code"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-500 hover:text-zinc-300"
+              ? "bg-zinc-800 text-white shadow-sm"
+              : "text-zinc-500 hover:text-zinc-300"
               }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -171,8 +171,8 @@ export default function RoomPage() {
           <button
             onClick={() => setMainTab("whiteboard")}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all ${mainTab === "whiteboard"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-500 hover:text-zinc-300"
+              ? "bg-zinc-800 text-white shadow-sm"
+              : "text-zinc-500 hover:text-zinc-300"
               }`}
           >
             <Presentation className="w-3.5 h-3.5" />

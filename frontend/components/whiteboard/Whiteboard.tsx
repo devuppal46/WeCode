@@ -1,15 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import { socket } from "@/lib/socket"
 import {
     Pencil,
     Eraser,
     Trash2,
     Download,
-    MousePointer2,
-    Circle as CircleIcon,
-    Square
+    MousePointer2
 } from "lucide-react"
 
 interface WhiteboardProps {
@@ -59,7 +57,8 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
             ctx.putImageData(tempContent, 0, 0)
         }
 
-        resizeCanvas()
+        // Initialize dimensions with a slight delay to ensure layout has settled
+        setTimeout(resizeCanvas, 10)
         window.addEventListener("resize", resizeCanvas)
 
         // ── Socket Events ───────────────────────────────────────────────────────
@@ -72,6 +71,7 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
         }
 
         const handleUpdate = (data: DrawData[]) => {
+            if (!data) return
             data.forEach(d => drawLine(d.prevPoint, d.currentPoint, d.color, d.width))
         }
 
@@ -128,7 +128,8 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
             y: e.clientY - rect.top
         }
 
-        const drawColor = tool === "eraser" ? "#09090b" : color // #09090b is zinc-950
+        // zinc-950 to match background
+        const drawColor = tool === "eraser" ? "#09090b" : color
         const finalWidth = tool === "eraser" ? lineWidth * 4 : lineWidth
 
         const drawData: DrawData = {
@@ -164,9 +165,9 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
     }
 
     return (
-        <div className="flex flex-col h-full bg-zinc-950 overflow-hidden select-none">
+        <div className="flex flex-col h-full bg-zinc-950 overflow-hidden select-none relative">
             {/* ── Toolbar ───────────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/50">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/50 z-10 shrink-0">
                 <div className="flex items-center gap-1.5">
                     <button
                         onClick={() => setTool("pencil")}
@@ -223,18 +224,18 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
             </div>
 
             {/* ── Canvas Area ───────────────────────────────────────────────────── */}
-            <div className="flex-1 relative bg-[#09090b]">
+            <div className="flex-1 w-full relative bg-[#09090b] overflow-hidden group">
                 <canvas
                     ref={canvasRef}
                     onMouseDown={handleMouseDown}
                     onMouseMove={handleMouseMove}
                     onMouseUp={stopDrawing}
                     onMouseLeave={stopDrawing}
-                    className="w-full h-full cursor-crosshair"
+                    className="absolute inset-0 cursor-crosshair touch-none"
                 />
 
                 {/* Helper Hint */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-[10px] text-zinc-500 flex items-center gap-2">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full bg-zinc-900/80 backdrop-blur-md border border-zinc-800 text-[10px] text-zinc-500 flex items-center gap-2 pointer-events-none opacity-100 group-hover:opacity-0 transition-opacity duration-500">
                     <MousePointer2 className="w-3 h-3" />
                     Everyone in the room can see what you draw
                 </div>

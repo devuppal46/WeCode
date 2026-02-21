@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Menu, X, Star } from "lucide-react"
+import { Menu, X, Star, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export function Navbar() {
@@ -19,7 +19,7 @@ export function Navbar() {
           <span className="font-semibold text-white text-lg">WeCode</span>
         </a>
 
-        {/* Right side - Star on GitHub + Create Room */}
+        {/* Right side - Star on GitHub + Join Room + Create Room */}
         <div className="hidden md:flex items-center gap-3">
           <a
             href="https://github.com/devuppal46/WeCode"
@@ -30,6 +30,12 @@ export function Navbar() {
             <Star className="w-4 h-4" />
             Star on GitHub
           </a>
+          <Button size="sm" variant="outline" asChild className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-white hover:border-zinc-700 bg-transparent rounded-full px-5 h-9 text-sm font-medium">
+            <Link href="/join">
+              <LogIn className="w-3.5 h-3.5 mr-1.5" />
+              Join Room
+            </Link>
+          </Button>
           <Button size="sm" asChild className="bg-white text-zinc-950 hover:bg-zinc-200 rounded-full px-5 h-9 text-sm font-medium">
             <Link href="/create">Create Room</Link>
           </Button>
@@ -59,8 +65,14 @@ export function Navbar() {
               <Star className="w-4 h-4" />
               Star on GitHub
             </a>
+            <Button variant="outline" asChild className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-white bg-transparent rounded-full">
+              <Link href="/join" onClick={() => setMobileMenuOpen(false)}>
+                <LogIn className="w-4 h-4 mr-2" />
+                Join Room
+              </Link>
+            </Button>
             <Button asChild className="bg-white text-zinc-950 hover:bg-zinc-200 rounded-full">
-              <Link href="/create">Create Room</Link>
+              <Link href="/create" onClick={() => setMobileMenuOpen(false)}>Create Room</Link>
             </Button>
           </div>
         </div>

@@ -5,15 +5,23 @@ import { useParams, useRouter } from "next/navigation";
 import CodeEditor from "@/components/editor/CodeEditor";
 import UserList from "@/components/presence/UserList";
 import ChatPanel from "@/components/chat/ChatPanel";
+import Whiteboard from "@/components/whiteboard/Whiteboard";
 import { socket } from "@/lib/socket";
-import { Users, MessageSquare, Copy, Check } from "lucide-react";
+import { Users, MessageSquare, Copy, Check, LogOut, Code2, Presentation } from "lucide-react";
 
 interface User {
   socketId: string;
   userName: string;
 }
 
+interface ChatMessage {
+  userName: string;
+  message: string;
+  timestamp: string;
+}
+
 type SidebarTab = "users" | "chat";
+type MainTab = "code" | "whiteboard";
 
 export default function RoomPage() {
   const params = useParams();
@@ -27,7 +35,9 @@ export default function RoomPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [agenda, setAgenda] = useState("");
   const [activeTab, setActiveTab] = useState<SidebarTab>("users");
+  const [mainTab, setMainTab] = useState<MainTab>("code");
   const [copiedRoomId, setCopiedRoomId] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   // Keep a ref in sync for use inside socket callbacks (avoids stale closure)
   const userNameRef = useRef(userName);
@@ -70,17 +80,22 @@ export default function RoomPage() {
     setUsers(updatedUsers);
   });
 
-  socket.on("languageUpdate", (newLang: string) => {
-    setLanguage(newLang);
-  });
+    socket.on("languageUpdate", (newLang: string) => {
+      setLanguage(newLang);
+    });
 
-  return () => {
-    socket.off("connect", handleConnect);
-    socket.off("codeUpdate");
-    socket.off("userListUpdate");
-    socket.off("languageUpdate");
-  };
-}, [roomId]);
+    socket.on("chatMessage", (msg: ChatMessage) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    return () => {
+      socket.off("codeUpdate");
+      socket.off("userListUpdate");
+      socket.off("languageUpdate");
+      socket.off("chatMessage");
+      socket.disconnect();
+    };
+  }, [roomId]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCodeChange = useCallback((value: string) => {
@@ -99,6 +114,13 @@ export default function RoomPage() {
       setTimeout(() => setCopiedRoomId(false), 2000);
     });
   }, [roomId]);
+
+  const handleDisconnect = useCallback(() => {
+    const confirmed = window.confirm("Are you sure you want to leave the workspace?");
+    if (confirmed) {
+      router.push("/");
+    }
+  }, [router]);
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-white overflow-hidden">
@@ -139,6 +161,30 @@ export default function RoomPage() {
           )}
         </div>
 
+        {/* Center: Mode Toggler */}
+        <div className="flex items-center bg-zinc-900 border border-zinc-800 rounded-lg p-0.5">
+          <button
+            onClick={() => setMainTab("code")}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all ${mainTab === "code"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-500 hover:text-zinc-300"
+              }`}
+          >
+            <Code2 className="w-3.5 h-3.5" />
+            Code
+          </button>
+          <button
+            onClick={() => setMainTab("whiteboard")}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all ${mainTab === "whiteboard"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-500 hover:text-zinc-300"
+              }`}
+          >
+            <Presentation className="w-3.5 h-3.5" />
+            Brainstorm
+          </button>
+        </div>
+
         {/* Right */}
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -157,15 +203,19 @@ export default function RoomPage() {
       {/* ── Main layout ──────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
 
-        {/* Editor */}
+        {/* Main Content (Editor or Whiteboard) */}
         <div className="flex-1 overflow-hidden min-w-0">
-          <CodeEditor
-            code={code}
-            language={language}
-            onChange={handleCodeChange}
-            onLanguageChange={handleLanguageChange}
-            userName={userName}
-          />
+          {mainTab === "code" ? (
+            <CodeEditor
+              code={code}
+              language={language}
+              onChange={handleCodeChange}
+              onLanguageChange={handleLanguageChange}
+              userName={userName}
+            />
+          ) : (
+            <Whiteboard roomId={roomId} />
+          )}
         </div>
 
         {/* Sidebar */}
@@ -176,8 +226,8 @@ export default function RoomPage() {
             <button
               onClick={() => setActiveTab("users")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${activeTab === "users"
-                  ? "text-white border-b-2 border-blue-500"
-                  : "text-zinc-500 hover:text-zinc-300"
+                ? "text-white border-b-2 border-blue-500"
+                : "text-zinc-500 hover:text-zinc-300"
                 }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -186,8 +236,8 @@ export default function RoomPage() {
             <button
               onClick={() => setActiveTab("chat")}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${activeTab === "chat"
-                  ? "text-white border-b-2 border-blue-500"
-                  : "text-zinc-500 hover:text-zinc-300"
+                ? "text-white border-b-2 border-blue-500"
+                : "text-zinc-500 hover:text-zinc-300"
                 }`}
             >
               <MessageSquare className="w-3.5 h-3.5" />
@@ -200,8 +250,23 @@ export default function RoomPage() {
             {activeTab === "users" ? (
               <UserList users={users} currentUser={userName} />
             ) : (
-              <ChatPanel roomId={roomId} userName={userName} />
+              <ChatPanel
+                roomId={roomId}
+                userName={userName}
+                messages={messages}
+              />
             )}
+          </div>
+
+          {/* Disconnect Button at the bottom */}
+          <div className="p-3 border-t border-zinc-800 bg-zinc-950/50">
+            <button
+              onClick={handleDisconnect}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-red-500/10 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/20 hover:border-red-600 transition-all text-[11px] font-bold uppercase tracking-wider"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              Disconnect
+            </button>
           </div>
         </div>
       </div>

@@ -2,9 +2,10 @@ import express from "express";
 import http from "http";
 import { Server, Socket } from "socket.io";
 import cors from "cors";
-import path from "path";
-import fs from "fs";
-import { exec } from "child_process";
+import axios from "axios";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 // --- Configuration ---
 const PORT = process.env.PORT || 5000;
@@ -47,72 +48,66 @@ interface ChatMessagePayload {
 const rooms: Record<string, Room> = {};
 
 // --- API Routes ---
-app.post("/api/execute", (req, res) => {
+// Map plain-text language names to Judge0 language IDs
+const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
+  python: 71,       // Python 3.8.1
+  python3: 71,
+  javascript: 63,   // Node.js 12.14.0
+  java: 62,         // Java 13.0.1
+  cpp: 54,          // GCC 9.2.0
+  "c++": 54,
+  c: 50,            // GCC 9.2.0
+  go: 60,           // Go 1.13.5
+  rust: 73,         // Rust 1.40.0
+};
+
+app.post("/api/execute", async (req, res) => {
   const { language, code } = req.body;
 
   if (!language || !code) {
     return res.status(400).json({ error: "Language and code are required", output: "" });
   }
 
-  const runId = Math.random().toString(36).substring(7);
-  let command = "";
-  let fileName = "";
+  const languageId = JUDGE0_LANGUAGE_MAP[language.toLowerCase()];
 
-  const tempDir = path.join(__dirname, "temp");
-  if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir, { recursive: true });
-  }
-
-  if (language === "python" || language === "python3") {
-    fileName = `${runId}.py`;
-    const filePath = path.join(tempDir, fileName);
-    fs.writeFileSync(filePath, code);
-    command = `python ${filePath}`;
-  } else if (language === "cpp" || language === "c++") {
-    fileName = `${runId}.cpp`;
-    const filePath = path.join(tempDir, fileName);
-    const outPath = path.join(tempDir, `${runId}.exe`);
-    fs.writeFileSync(filePath, code);
-    command = `g++ ${filePath} -o ${outPath} && ${outPath}`;
-  } else if (language === "java") {
-    fileName = `Main.java`;
-    const folderPath = path.join(tempDir, runId);
-    fs.mkdirSync(folderPath, { recursive: true });
-    const filePath = path.join(folderPath, fileName);
-    fs.writeFileSync(filePath, code);
-    command = `javac ${filePath} && java -cp ${folderPath} Main`;
-  } else {
+  if (!languageId) {
     return res.status(400).json({ error: "Unsupported language", output: "" });
   }
 
-  const execTimeout = 10000;
-
-  exec(command, { timeout: execTimeout }, (error, stdout, stderr) => {
-    // Cleanup temporary files
-    try {
-      if (language === "java") {
-        fs.rmSync(path.join(tempDir, runId), { recursive: true, force: true });
-      } else {
-        const filePath = path.join(tempDir, fileName);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        if (language === "cpp" || language === "c++") {
-          const outPath = path.join(tempDir, `${runId}.exe`);
-          if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
-        }
+  try {
+    // 1. Submit code to Judge0 endpoint
+    // Using the free, public Judge0 CE API. 
+    // In production, consider hosting your own Judge0 instance mapping or using RapidAPI.
+    const response = await axios.post(
+      "https://judge0-ce.p.rapidapi.com/submissions?base64_encoded=false&wait=true",
+      {
+        source_code: code,
+        language_id: languageId,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-host": "judge0-ce.p.rapidapi.com",
+          "x-rapidapi-key": process.env.RAPIDAPI_KEY || "YOUR_RAPIDAPI_KEY_HERE", // Provide key here
+        },
       }
-    } catch (cleanupErr) {
-      console.error("Cleanup error:", cleanupErr);
+    );
+
+    const { stdout, stderr, compile_output, message } = response.data;
+
+    if (compile_output) {
+      return res.json({ error: compile_output, output: "" });
     }
 
-    if (error) {
-      if (error.killed) {
-        return res.json({ error: "Execution timed out", output: stdout || stderr });
-      }
-      return res.json({ error: stderr || error.message || "Execution failed", output: stdout });
+    if (stderr || message) {
+      return res.json({ error: stderr || message, output: stdout || "" });
     }
 
-    res.json({ error: stderr || null, output: stdout });
-  });
+    return res.json({ error: null, output: stdout || "" });
+  } catch (error: any) {
+    console.error("Judge0 Execution Error:", error.response?.data || error.message);
+    res.json({ error: "Execution service unavailable. Please try again later.", output: "" });
+  }
 });
 
 // --- Socket Handlers ---

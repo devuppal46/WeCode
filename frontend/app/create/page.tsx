@@ -114,12 +114,8 @@ export default function CreatePage() {
                 </SelectTrigger>
                 <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-300">
                   <SelectItem value="python">Python</SelectItem>
-                  <SelectItem value="javascript">JavaScript</SelectItem>
-                  <SelectItem value="typescript">TypeScript</SelectItem>
                   <SelectItem value="java">Java</SelectItem>
                   <SelectItem value="cpp">C++</SelectItem>
-                  <SelectItem value="go">Go</SelectItem>
-                  <SelectItem value="rust">Rust</SelectItem>
                 </SelectContent>
               </Select>
             </div>

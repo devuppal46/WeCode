@@ -47,16 +47,10 @@ export default function RoomPage() {
   useEffect(() => {
   if (!roomId) return;
 
-<<<<<<< HEAD
-  const storedName = sessionStorage.getItem("wecode_userName") ?? "Guest";
-  const storedLang = sessionStorage.getItem("wecode_language") ?? "javascript";
-  const storedAgenda = sessionStorage.getItem("wecode_agenda") ?? "";
-=======
     // 1. Read persisted form data
     const storedName = sessionStorage.getItem("wecode_userName") ?? "Guest";
     const storedLang = sessionStorage.getItem("wecode_language") ?? "python";
     const storedAgenda = sessionStorage.getItem("wecode_agenda") ?? "";
->>>>>>> 873ace2e686168bf6bb4d4eaba856258aede5b6a
 
   setUserName(storedName);
   setLanguage(storedLang);
@@ -219,6 +213,7 @@ export default function RoomPage() {
               onChange={handleCodeChange}
               onLanguageChange={handleLanguageChange}
               userName={userName}
+              roomId={roomId}
             />
           ) : (
             <Whiteboard roomId={roomId} />

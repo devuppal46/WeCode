@@ -44,10 +44,10 @@ export function BentoGrid() {
             className="text-3xl sm:text-4xl font-bold text-white mb-4"
             style={{ fontFamily: "var(--font-cal-sans)" }}
           >
-            Everything you need to collaborate
+            Built for DSA mastery & interviews
           </h2>
           <p className="text-zinc-400 max-w-2xl mx-auto">
-            Built for developers. Powerful features that make real-time collaboration seamless.
+            A comprehensive workspace combining code execution, communication, and visual problem-solving for your technical interviews.
           </p>
         </div>
 
@@ -57,9 +57,9 @@ export function BentoGrid() {
             <div className="p-2 rounded-lg bg-zinc-800 w-fit mb-4">
               <Radio className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Real-Time Collaboration</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">Live Interview Environment</h3>
             <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-              See live edits, cursors, and changes instantly via WebSockets. Code together as if you were in the same room.
+              Experience zero-latency cursor tracking and live code syncing. Perfect for conducting or practicing mock technical interviews.
             </p>
             <div className="relative h-16 w-full rounded-lg bg-zinc-800/50 border border-zinc-700/50 overflow-hidden flex items-center px-4">
               <div className="flex items-center gap-3">
@@ -109,9 +109,9 @@ export function BentoGrid() {
             <div className="p-2 rounded-lg bg-zinc-800 w-fit mb-4">
               <Trophy className="w-5 h-5 text-zinc-400" strokeWidth={1.5} />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">Built for Hackathons</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">Interactive Whiteboarding</h3>
             <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-              Perfect for practicing DSA and interviews. Collaborate on problems, share solutions, and learn together.
+              Map out your algorithms visually with a built-in Excalidraw canvas before you start coding the solution.
             </p>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/80 border border-zinc-700/50">

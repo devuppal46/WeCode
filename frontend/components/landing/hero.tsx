@@ -126,13 +126,13 @@ export function Hero() {
             className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-6 text-balance"
             style={{ fontFamily: "var(--font-cal-sans), sans-serif" }}
           >
-            Code Together.
+            Solve Together
             <br />
             <span className="text-zinc-500">In Real Time.</span>
           </h1>
 
           <p className="text-base sm:text-lg text-zinc-400 max-w-lg mb-10 leading-relaxed">
-            Collaborate with friends instantly, write code simultaneously, and build faster. No setup required.
+            A real-time workspace where you code, discuss, visualize solutions together and master DSA.
           </p>
 
           <div className="flex flex-col sm:flex-row items-start gap-3">

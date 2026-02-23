@@ -50,15 +50,10 @@ const rooms: Record<string, Room> = {};
 // --- API Routes ---
 // Map plain-text language names to Judge0 language IDs
 const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
-  python: 71,       // Python 3.8.1
-  python3: 71,
-  javascript: 63,   // Node.js 12.14.0
-  java: 62,         // Java 13.0.1
-  cpp: 54,          // GCC 9.2.0
-  "c++": 54,
-  c: 50,            // GCC 9.2.0
-  go: 60,           // Go 1.13.5
-  rust: 73,         // Rust 1.40.0
+  javascript: 63,
+  python: 71,
+  cpp: 54,
+  java: 62,
 };
 
 app.post("/api/execute", async (req, res) => {
@@ -199,7 +194,67 @@ io.on("connection", (socket: Socket) => {
     io.to(roomId).emit("clearCanvas");
   });
 
-  // 6. Disconnect Event
+  // 6. Run Code Event
+  socket.on("runCode", async ({ roomId, code, language, input }: { roomId: string; code: string; language: string; input?: string }) => {
+    try {
+      // Map language to Judge0 language_id
+      const languageId = JUDGE0_LANGUAGE_MAP[language.toLowerCase()];
+
+      if (!languageId) {
+        socket.emit("codeResult", {
+          error: `Unsupported language: ${language}. Supported languages: javascript, python, cpp, java`,
+          stdout: "",
+          stderr: "",
+          compile_output: "",
+          status: { description: "Unsupported Language" }
+        });
+        return;
+      }
+
+      // Make request to Judge0 CE API
+      const response = await axios.post(
+        "https://ce.judge0.com/submissions?base64_encoded=true&wait=true",
+        {
+          source_code: Buffer.from(code).toString('base64'),
+          language_id: languageId,
+          stdin: input ? Buffer.from(input).toString('base64') : ""
+        },
+        {
+          headers: {
+            "Content-Type": "application/json"
+          },
+          timeout: 30000 // 30 second timeout
+        }
+      );
+
+      const { stdout, stderr, compile_output, status, message } = response.data;
+
+      // Decode base64 responses
+      const decodeBase64 = (str: string | null) => str ? Buffer.from(str, 'base64').toString('utf-8') : "";
+
+      // Emit the result back to the client
+      socket.emit("codeResult", {
+        stdout: decodeBase64(stdout) || "",
+        stderr: decodeBase64(stderr) || "",
+        compile_output: decodeBase64(compile_output) || "",
+        status: status || { description: "Unknown" },
+        error: message || null
+      });
+
+    } catch (error: any) {
+      console.error("Judge0 API Error:", error.response?.data || error.message);
+
+      socket.emit("codeResult", {
+        error: "Code execution failed. Please try again later.",
+        stdout: "",
+        stderr: "",
+        compile_output: "",
+        status: { description: "Execution Failed" }
+      });
+    }
+  });
+
+  // 7. Disconnect Event
   socket.on("disconnect", () => {
     console.log(`[-] User disconnected: ${socket.id}`);
 

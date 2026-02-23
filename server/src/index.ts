@@ -9,18 +9,39 @@ dotenv.config();
 
 // --- Configuration ---
 const PORT = process.env.PORT || 5000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:3000";
 
 const app = express();
-app.use(cors());
+
+// Allow multiple origins or use "*" for broad access in production
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://we-code-two.vercel.app"
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not ' +
+        'allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
 app.use(express.json());
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: CORS_ORIGIN,
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
+    credentials: true
   },
 });
 

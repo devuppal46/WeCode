@@ -2,6 +2,7 @@
 
 import Editor from "@monaco-editor/react"
 import { useRef, useState, useCallback, useEffect } from "react"
+import { socket } from "@/lib/socket"
 import {
   Copy,
   Check,
@@ -15,6 +16,7 @@ import {
 
 // ─── Language config ───────────────────────────────────────────────
 export const LANGUAGES = [
+  { value: "javascript", label: "JavaScript", ext: "js" },
   { value: "python", label: "Python", ext: "py" },
   { value: "java", label: "Java", ext: "java" },
   { value: "cpp", label: "C++", ext: "cpp" },
@@ -28,6 +30,7 @@ interface CodeEditorProps {
   onChange: (value: string) => void
   onLanguageChange?: (lang: string) => void
   userName?: string
+  roomId: string
 }
 
 // ─── Language Badge color map ──────────────────────────────────────────────────
@@ -58,6 +61,7 @@ export default function CodeEditor({
   onChange,
   onLanguageChange,
   userName = "You",
+  roomId,
 }: CodeEditorProps) {
   const editorRef = useRef<any>(null)
   const terminalEndRef = useRef<HTMLDivElement>(null)
@@ -72,6 +76,7 @@ export default function CodeEditor({
     "Console initialized...",
     "Waiting for execution...",
   ])
+  const [stdin, setStdin] = useState("")
 
   // ── Auto-scroll console ──────────────────────────────────────────────────
   useEffect(() => {
@@ -79,6 +84,73 @@ export default function CodeEditor({
       terminalEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }
   }, [output, showConsole])
+
+  // ── Listen for code execution results ────────────────────────────────────
+  useEffect(() => {
+    const handleCodeResult = (result: {
+      stdout?: string
+      stderr?: string
+      compile_output?: string
+      status?: { description: string }
+      error?: string
+    }) => {
+      setIsRunning(false)
+
+      const resultLines: string[] = []
+
+      if (result.error) {
+        resultLines.push(`[Error] ${result.error}`)
+      } else {
+        resultLines.push(`[Success] Code executed successfully`)
+      }
+
+      resultLines.push(`-------------------------------------------`)
+
+      // Status
+      if (result.status) {
+        resultLines.push(`Status: ${result.status.description}`)
+      }
+
+      // Standard Output
+      resultLines.push(`Standard Output:`)
+      if (result.stdout && result.stdout.trim()) {
+        result.stdout.trim().split('\n').forEach(line => {
+          resultLines.push(`> ${line}`)
+        })
+      } else {
+        resultLines.push(`> (No output)`)
+      }
+
+      // Standard Error
+      if (result.stderr && result.stderr.trim()) {
+        resultLines.push(`-------------------------------------------`)
+        resultLines.push(`Standard Error:`)
+        result.stderr.trim().split('\n').forEach(line => {
+          resultLines.push(`> ${line}`)
+        })
+      }
+
+      // Compile Output
+      if (result.compile_output && result.compile_output.trim()) {
+        resultLines.push(`-------------------------------------------`)
+        resultLines.push(`Compile Output:`)
+        result.compile_output.trim().split('\n').forEach(line => {
+          resultLines.push(`> ${line}`)
+        })
+      }
+
+      resultLines.push(`-------------------------------------------`)
+      resultLines.push(`Execution completed.`)
+
+      setOutput(prev => [...prev, ...resultLines])
+    }
+
+    socket.on("codeResult", handleCodeResult)
+
+    return () => {
+      socket.off("codeResult", handleCodeResult)
+    }
+  }, [])
 
   // ── Resize Logic ──────────────────────────────────────────────────────────
   const startDragging = useCallback((e: React.MouseEvent) => {
@@ -141,54 +213,17 @@ export default function CodeEditor({
 
     setOutput((prev) => [
       ...prev,
-      `[${new Date().toLocaleTimeString()}] Running build pipeline...`,
+      `[${new Date().toLocaleTimeString()}] Running code...`,
       `[Status] Sending code to server for execution...`,
     ])
 
-    try {
-      const response = await fetch("http://localhost:5000/api/execute", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          language: language,
-          code: codeToRun,
-        }),
-      })
-
-      const data = await response.json()
-
-      setIsRunning(false)
-
-      const rawOutput: string = data.output || ""
-      const outLines = rawOutput.trim().split('\n')
-      const hasOutput = rawOutput.trim() !== ""
-
-      setOutput((prev) => [
-        ...prev,
-        ...(!data.error ? [`[Success] Execution finished.`] : [`[Error] Execution finished with errors.`]),
-        `-------------------------------------------`,
-        `Standard Output:`,
-        ...(hasOutput
-          ? outLines.map((line: string) => `> ${line}`)
-          : [`> (No output)`]),
-        `-------------------------------------------`,
-        ...(data.error ? [
-          `Error Output:`,
-          ...(typeof data.error === 'string' ? data.error.trim().split('\n').map((line: string) => `> ${line}`) : [`> ${String(data.error)}`]),
-          `-------------------------------------------`
-        ] : []),
-        data.error ? `Result: Execution finished with errors.` : `Result: Execution finished successfully.`,
-      ])
-    } catch (err: any) {
-      setIsRunning(false)
-      setOutput((prev) => [
-        ...prev,
-        `[Error] Failed to execute code: ${err.message}`,
-        `Result: Execution failed.`,
-      ])
-    }
+    // Emit runCode event via Socket.io
+    socket.emit("runCode", {
+      roomId,
+      code: codeToRun,
+      language,
+      input: stdin.trim() || undefined,
+    })
   }
 
   const clearConsole = () => setOutput(["Console cleared."])
@@ -380,6 +415,22 @@ export default function CodeEditor({
                 >
                   <XCircle className="w-3 h-3 text-zinc-600 hover:text-red-400" />
                 </button>
+              </div>
+            </div>
+
+            {/* Input Section */}
+            <div className="px-3 py-2 bg-[#1e1e1e] border-b border-[#3c3c3c] shrink-0">
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
+                  Input (stdin):
+                </label>
+                <input
+                  type="text"
+                  value={stdin}
+                  onChange={(e) => setStdin(e.target.value)}
+                  placeholder="Enter input for your program..."
+                  className="flex-1 px-2 py-1 text-xs bg-[#2d2d2d] border border-[#3c3c3c] rounded text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-blue-500"
+                />
               </div>
             </div>
             <div className="flex-1 p-3 font-mono text-[11px] leading-relaxed overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800">

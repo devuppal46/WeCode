@@ -31,7 +31,7 @@ export default function RoomPage() {
   // State — userName is state (not just ref) so the header re-renders with it
   const [userName, setUserName] = useState("Guest");
   const [language, setLanguage] = useState("python");
-  const [code, setCode] = useState("// Start coding...");
+  const [code, setCode] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [agenda, setAgenda] = useState("");
   const [activeTab, setActiveTab] = useState<SidebarTab>("users");
@@ -45,41 +45,45 @@ export default function RoomPage() {
 
   // ── Single init effect: read sessionStorage → connect socket → join room ──
   useEffect(() => {
-  if (!roomId) return;
+    if (!roomId) return;
 
     // 1. Read persisted form data
     const storedName = sessionStorage.getItem("wecode_userName") ?? "Guest";
     const storedLang = sessionStorage.getItem("wecode_language") ?? "python";
     const storedAgenda = sessionStorage.getItem("wecode_agenda") ?? "";
 
-  setUserName(storedName);
-  setLanguage(storedLang);
-  setAgenda(storedAgenda);
-  userNameRef.current = storedName;
+    setUserName(storedName);
+    setLanguage(storedLang);
+    setAgenda(storedAgenda);
+    userNameRef.current = storedName;
 
-  // ✅ Prevent double connect
-  if (!socket.connected) {
-    socket.connect();
-  }
+    // ✅ Prevent double connect
+    if (!socket.connected) {
+      socket.connect();
+    }
 
-  // ✅ Emit join AFTER connect event
-  const handleConnect = () => {
-    socket.emit("joinRoom", {
-      roomId,
-      userName: storedName,
-      language: storedLang,
+    // ✅ Emit join logic
+    const handleConnect = () => {
+      socket.emit("joinRoom", {
+        roomId,
+        userName: storedName,
+        language: storedLang,
+      });
+    };
+
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    socket.on("connect", handleConnect);
+
+    socket.on("codeUpdate", (newCode: string) => {
+      setCode(newCode);
     });
-  };
 
-  socket.on("connect", handleConnect);
-
-  socket.on("codeUpdate", (newCode: string) => {
-    setCode(newCode);
-  });
-
-  socket.on("userListUpdate", (updatedUsers: User[]) => {
-    setUsers(updatedUsers);
-  });
+    socket.on("userListUpdate", (updatedUsers: User[]) => {
+      setUsers(updatedUsers);
+    });
 
     socket.on("languageUpdate", (newLang: string) => {
       setLanguage(newLang);
@@ -90,10 +94,12 @@ export default function RoomPage() {
     });
 
     return () => {
+      socket.off("connect");
       socket.off("codeUpdate");
       socket.off("userListUpdate");
       socket.off("languageUpdate");
       socket.off("chatMessage");
+      socket.off("codeResult");
       socket.disconnect();
     };
   }, [roomId]);

@@ -15,7 +15,7 @@ const app = express();
 // Allow multiple origins or use "*" for broad access in production
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://we-code-two.vercel.app"
+  "https://we-code-dsa.vercel.app"
 ];
 
 app.use(cors({

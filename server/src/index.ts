@@ -47,6 +47,13 @@ interface ChatMessagePayload {
 // In-memory store for room state. For production, consider using Redis.
 const rooms: Record<string, Room> = {};
 
+const DEFAULT_CODE: Record<string, string> = {
+  javascript: `// WeCode: JavaScript Environment\n\nconsole.log("Hello, WeCode!");\n`,
+  python: `# WeCode: Python Environment\n\nprint("Hello, WeCode!")\n`,
+  cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello, WeCode!" << std::endl;\n    return 0;\n}\n`,
+  java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, WeCode!");\n    }\n}\n`,
+};
+
 // --- API Routes ---
 // Map plain-text language names to Judge0 language IDs
 const JUDGE0_LANGUAGE_MAP: Record<string, number> = {
@@ -116,7 +123,7 @@ io.on("connection", (socket: Socket) => {
     // Initialize room if it doesn't exist
     if (!rooms[roomId]) {
       rooms[roomId] = {
-        code: "// Start coding...",
+        code: DEFAULT_CODE[language?.toLowerCase()] || "// Start coding...",
         language: language || "python",
         users: [],
         canvasData: [],
@@ -126,11 +133,13 @@ io.on("connection", (socket: Socket) => {
 
     const room = rooms[roomId];
 
-    // Add user to the room state
-    room.users.push({
-      socketId: socket.id,
-      userName,
-    });
+    // Add user to the room state if not already present
+    if (!room.users.find((u) => u.socketId === socket.id)) {
+      room.users.push({
+        socketId: socket.id,
+        userName,
+      });
+    }
 
     console.log(`[i] User '${userName}' joined room: ${roomId}`);
 
@@ -238,7 +247,7 @@ io.on("connection", (socket: Socket) => {
         stderr: decodeBase64(stderr) || "",
         compile_output: decodeBase64(compile_output) || "",
         status: status || { description: "Unknown" },
-        error: message || null
+        error: decodeBase64(message) || null
       });
 
     } catch (error: any) {

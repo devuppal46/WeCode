@@ -7,6 +7,7 @@ import UserList from "@/components/presence/UserList";
 import ChatPanel from "@/components/chat/ChatPanel";
 import Whiteboard from "@/components/whiteboard/Whiteboard";
 import { socket } from "@/lib/socket";
+import { codeTemplates } from "@/lib/codeTemplates";
 import { Users, MessageSquare, Copy, Check, LogOut, Code2, Presentation } from "lucide-react";
 
 interface User {
@@ -38,6 +39,8 @@ export default function RoomPage() {
   const [mainTab, setMainTab] = useState<MainTab>("code");
   const [copiedRoomId, setCopiedRoomId] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [receivedCode, setReceivedCode] = useState<string | null>(null);
+  const [hasReceivedLanguage, setHasReceivedLanguage] = useState(false);
 
   // Keep a ref in sync for use inside socket callbacks (avoids stale closure)
   const userNameRef = useRef(userName);
@@ -69,6 +72,7 @@ export default function RoomPage() {
         userName: storedName,
         language: storedLang,
       });
+      // Emit initial code template will be handled after receiving updates
     };
 
     if (socket.connected) {
@@ -78,6 +82,7 @@ export default function RoomPage() {
     socket.on("connect", handleConnect);
 
     socket.on("codeUpdate", (newCode: string) => {
+      setReceivedCode(newCode);
       setCode(newCode);
     });
 
@@ -87,6 +92,11 @@ export default function RoomPage() {
 
     socket.on("languageUpdate", (newLang: string) => {
       setLanguage(newLang);
+      setHasReceivedLanguage(true);
+      if (receivedCode === "") {
+        setCode(codeTemplates[newLang as keyof typeof codeTemplates]);
+        socket.emit("codeChange", { roomId, code: codeTemplates[newLang as keyof typeof codeTemplates] });
+      }
     });
 
     socket.on("chatMessage", (msg: ChatMessage) => {
@@ -112,7 +122,10 @@ export default function RoomPage() {
 
   const handleLanguageChange = useCallback((lang: string) => {
     setLanguage(lang);
+    const template = codeTemplates[lang as keyof typeof codeTemplates];
+    setCode(template);
     socket.emit("languageChange", { roomId, language: lang });
+    socket.emit("codeChange", { roomId, code: template });
   }, [roomId]);
 
   const copyRoomId = useCallback(() => {

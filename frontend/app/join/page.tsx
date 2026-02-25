@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -33,6 +33,14 @@ export default function JoinPage() {
         <div className="min-h-screen bg-black flex items-center justify-center px-4">
             <div className="w-full max-w-md">
                 <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-8">
+                    {/* Back to Home */}
+                    <div
+                        className="mb-6 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors cursor-pointer w-fit"
+                        onClick={() => router.push("/")}
+                    >
+                        <ArrowLeft size={18} />
+                        <span className="text-sm font-medium">Home</span>
+                    </div>
                     {/* Header */}
                     <div className="mb-8">
                         <h1

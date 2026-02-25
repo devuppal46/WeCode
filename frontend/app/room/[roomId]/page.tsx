@@ -32,7 +32,14 @@ export default function RoomPage() {
   // State — userName is state (not just ref) so the header re-renders with it
   const [userName, setUserName] = useState("Guest");
   const [language, setLanguage] = useState("python");
-  const [code, setCode] = useState("");
+  const [code, setCode] = useState(() => {
+    // Try to get the language from sessionStorage synchronously
+    if (typeof window !== "undefined") {
+      const storedLang = sessionStorage.getItem("wecode_language") ?? "python";
+      return codeTemplates[storedLang as keyof typeof codeTemplates] || "";
+    }
+    return codeTemplates["python"];
+  });
   const [users, setUsers] = useState<User[]>([]);
   const [agenda, setAgenda] = useState("");
   const [activeTab, setActiveTab] = useState<SidebarTab>("users");
@@ -59,6 +66,7 @@ export default function RoomPage() {
     setLanguage(storedLang);
     setAgenda(storedAgenda);
     userNameRef.current = storedName;
+    setCode(codeTemplates[storedLang as keyof typeof codeTemplates] || "");
 
     // ✅ Prevent double connect
     if (!socket.connected) {

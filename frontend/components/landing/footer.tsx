@@ -16,7 +16,7 @@ export function Footer() {
             />
             <span className="font-semibold text-white text-sm">WeCode</span>
           </a>
-          <p className="text-xs text-zinc-500">developed by dev & purvanshu</p>
+          <p className="text-xs text-zinc-500">made by dev & purvanshu</p>
         </div>
 
         {/* Right: Nav links inline */}

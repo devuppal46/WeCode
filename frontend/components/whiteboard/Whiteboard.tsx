@@ -32,6 +32,7 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
     const [color, setColor] = useState("#3b82f6") // Default blue
     const [lineWidth, setLineWidth] = useState(3)
     const [tool, setTool] = useState<"pencil" | "eraser">("pencil")
+    const [eraserSize, setEraserSize] = useState<number>(15) // Default eraser size
     const prevPoint = useRef<Point | null>(null)
 
     // ── Setup Canvas ──────────────────────────────────────────────────────────
@@ -130,7 +131,7 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
 
         // zinc-950 to match background
         const drawColor = tool === "eraser" ? "#09090b" : color
-        const finalWidth = tool === "eraser" ? lineWidth * 4 : lineWidth
+        const finalWidth = tool === "eraser" ? eraserSize : lineWidth
 
         const drawData: DrawData = {
             prevPoint: prevPoint.current,
@@ -185,6 +186,31 @@ export default function Whiteboard({ roomId }: WhiteboardProps) {
                     >
                         <Eraser className="w-4 h-4" />
                     </button>
+                    {/* Eraser Size Controls */}
+                    {tool === "eraser" && (
+                        <div className="flex items-center gap-2 ml-3">
+                            {[15, 30, 60].map(size => (
+                                <button
+                                    key={size}
+                                    onClick={() => setEraserSize(size)}
+                                    className={`relative w-8 h-8 rounded-md flex items-center justify-center transition-all
+                                        ${eraserSize === size
+                                            ? "bg-emerald-500/20 border border-emerald-400"
+                                            : "bg-zinc-800 border border-zinc-700 hover:border-emerald-400"
+                                        }`}
+                                    title={`Eraser ${size}px`}
+                                >
+                                    <div
+                                        className="rounded-full bg-white"
+                                        style={{
+                                            width: size / 5,
+                                            height: size / 5,
+                                        }}
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     <div className="w-px h-6 bg-zinc-800 mx-2" />
 

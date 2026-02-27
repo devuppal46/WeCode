@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 export function Footer() {
   return (
     <footer className="border-t border-zinc-800 bg-zinc-950">
@@ -5,17 +7,21 @@ export function Footer() {
         {/* Left: Brand + Copyright stacked */}
         <div className="flex flex-col gap-1">
           <a href="#" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center">
-              <span className="text-zinc-950 font-bold text-xs">W</span>
-            </div>
+            <Image
+              src="/coding.png"
+              alt="WeCode Logo"
+              width={28}
+              height={28}
+              className="w-7 h-7"
+            />
             <span className="font-semibold text-white text-sm">WeCode</span>
           </a>
-          <p className="text-xs text-zinc-500">&copy; 2026 WeCode. Open Source.</p>
+          <p className="text-xs text-zinc-500">developed by dev & purvanshu</p>
         </div>
 
         {/* Right: Nav links inline */}
         <div className="flex flex-row items-center gap-6">
-          <a href="https://github.com" className="text-sm text-zinc-500 hover:text-white transition-colors">
+          <a href="https://github.com/devuppal46/WeCode" className="text-sm text-zinc-500 hover:text-white transition-colors">
             GitHub
           </a>
           <a href="#" className="text-sm text-zinc-500 hover:text-white transition-colors">

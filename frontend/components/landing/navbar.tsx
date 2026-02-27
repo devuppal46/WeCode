@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Menu, X, Star, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -13,9 +14,13 @@ export function Navbar() {
       <nav className="flex items-center justify-between px-6 lg:px-8 py-3 w-full">
         {/* Logo - leftmost */}
         <a href="#" className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-            <span className="text-zinc-950 font-bold text-sm">W</span>
-          </div>
+          <Image
+            src="/coding.png"
+            alt="WeCode Logo"
+            width={32}
+            height={32}
+            className="w-8 h-8"
+          />
           <span className="font-semibold text-white text-lg">WeCode</span>
         </a>
 

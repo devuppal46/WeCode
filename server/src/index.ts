@@ -69,10 +69,10 @@ interface ChatMessagePayload {
 const rooms: Record<string, Room> = {};
 
 const DEFAULT_CODE: Record<string, string> = {
-  javascript: `// WeCode: JavaScript Environment\n\nconsole.log("Hello, WeCode!");\n`,
-  python: `# WeCode: Python Environment\n\nprint("Hello, WeCode!")\n`,
-  cpp: `#include <iostream>\n\nint main() {\n    std::cout << "Hello, WeCode!" << std::endl;\n    return 0;\n}\n`,
-  java: `public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello, WeCode!");\n    }\n}\n`,
+  javascript: ``,
+  python: ``,
+  cpp: ``,
+  java: ``,
 };
 
 // --- API Routes ---
